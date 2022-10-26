@@ -17,8 +17,8 @@ library(landscapemetrics)
 # 1: Creating fake banding data
 # 2: Exploring the data and adding new covariates
 # 3: Simulating telemetry data using a for loop 
-# 4:
-# 5: Integrating for loops and functions to solve complicated problems
+# 4: Using functions to process code faster
+# 5: Using functions and for loops together
 
 #  ******************* STEP 0: Basics of How to Make a For Loop and a Function **********************
 
@@ -164,7 +164,7 @@ hist(rowSums(ch)) #Most birds don't make to week 2
 hist(rowSums(ch[which(bird_data$site=='Missouri'),]))
 hist(rowSums(ch[which(bird_data$site=='Middle Earth'),]))
 
-# ************************* PART 4: SOMETHING YOU NEED A FUNCTION FOR *************************
+# ************************* PART 4: Using functions to process code faster *************************
 # In certain circumstances, your code may take a prohibitively long time to run. This is especially true of landscape analyses
 # We can make our code run faster using a unique application of functions called parallel processing
 
@@ -184,14 +184,14 @@ create_forest_maps <- function(x){
 }
 #we could create these landscapes one at a time
 
-system.time(bird_data$landscapes <- lapply(bird_data$site, create_forest_maps))
+bird_data$landscapes <- lapply(bird_data$site, create_forest_maps)
 
 #alternatively, let's use a parallel processing package (furrr) to do it quickly
 plan(multisession) #run this if you're using a PC
 # plan(multicore) #run this if you're using a Mac
 
-system.time(bird_data$landscapes <- future_map(bird_data$site, create_forest_maps, 
-            .options = furrr_options(seed = TRUE))) #tells the machine to generate maps randomly for each instance
+bird_data$landscapes <- future_map(bird_data$site, create_forest_maps, 
+            .options = furrr_options(seed = TRUE)) #tells the machine to generate maps randomly for each instance
 
 #The parallel code ran 5.7 times faster on Liam's PC.
 
@@ -209,13 +209,54 @@ bird_data$aggregation_index <- lapply(bird_data$landscapes, function(x){ #this c
 })
 
 # ^ this last step could have been done with a for loop as well. Frequently, for loops vs. functions comes down to personal preference
-# However, functions tend to be more computationally efficient when dealing with large datasets, and are the only way to access parallel processing in R
+# However, functions tend to be more computationally efficient when dealing with large datasets,
+# and are the only way to access parallel processing in R
 
 
 
+# ************************* PART 5: Using functions and for loops together *************************
+# How would the encounter histories look if we changed the base survival rate?
 
-# ************************* PART 5: PUT TOGETHER SOME KIND OF DATA SET, I GUESS *************************
-# put together simulated capture recapture data sets with a few different parameter situations
-# or maybe not
+capture_history_generator <- function(base_survival, bird_data){
+  
+  # So we're going to add a column for expected survival and figure out what it will be for each
+  bird_data$ex_surv <- base_survival # baseline survival column
+  
+  # ** FOR LOOP **
+  # each individual is different so we're looping through individuals
+  for (i in 1:nrow(bird_data)){ # i = individual bird
+    if (bird_data$sex[i]=='m'){
+      bird_data$ex_surv[i] <- bird_data$ex_surv[i]-0.1
+    }
+    if (bird_data$condition[i]<106){
+      bird_data$ex_surv[i] <- bird_data$ex_surv[i]-0.3
+    }
+    if(bird_data$site[i]=='Middle Earth'){
+      bird_data$ex_surv[i] <- bird_data$ex_surv[i]-0.2
+    }
+    if(bird_data$ex_surv[i] < 0){
+      bird_data$ex_surv[i] <- 0
+    }
+  }
 
-# 
+  time <- 8 # (8 weeks)
+  ch <- matrix(0, nrow(bird_data), time) # capture history matrix with a row for each individual and a column for each time step
+  ch[,1] <- 1 # everyone is alive at the beginning of the study
+  
+  for (i in 1:nrow(bird_data)){
+    for (t in 2:time){ # note that this is 2:8 because we already know what is happening at t=1
+      if (ch[i, t-1]==1){ # if the individual is alive at time step t-1
+        ch[i,t] <- rbinom(1, 1, prob=bird_data$ex_surv[i]) # then use the assigned survival probability for a bernoulli trial (weighted coin flip)
+      }
+    }
+  }
+  return(ch)
+}
+
+# We can now generate capture histories while changing the base survival rate as desired, 
+# and watch how the resulting capture histories change
+ch_100pct <- capture_history_generator(base_survival = 1, bird_data = bird_data); hist(rowSums(ch_100pct))
+ch_50pct <- capture_history_generator(base_survival = 0.5, bird_data = bird_data); hist(rowSums(ch_50pct))
+ch_30pct <- capture_history_generator(base_survival = 0.3, bird_data = bird_data); hist(rowSums(ch_30pct))
+
+# This modularity is one of the major advantages of functions
