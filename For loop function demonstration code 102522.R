@@ -4,6 +4,9 @@
 
 library(remotes)
 
+# Before going any further, download RTools here:
+# https://cran.r-project.org/bin/windows/Rtools/
+
 install_github("cran/RandomFieldsUtils")
 install_github("cran/RandomFields")
 install_github("ropensci/NLMR")
@@ -121,10 +124,6 @@ example_function <- function(x){
 t <- example_function(1:5)
 
 t
-# **************************************************************************************************************************************
-
-
-
 
 # *********************** STEP 1: CREATING FAKE BANDING DATA ************************************
 set.seed(999)
