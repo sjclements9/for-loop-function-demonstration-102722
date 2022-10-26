@@ -2,9 +2,11 @@
 # Code Club Oct 27 2022
 # SJC & LAB
 
-remotes::install_github("cran/RandomFieldsUtils")
-remotes::install_github("cran/RandomFields")
-remotes::install_github("ropensci/NLMR")
+library(remotes)
+
+install_github("cran/RandomFieldsUtils")
+install_github("cran/RandomFields")
+install_github("ropensci/NLMR")
 
 library(dplyr)
 library(furrr)
@@ -61,20 +63,72 @@ for (i in 1:length(letters)){
 arr
 
 # *** Functions ***
-# Here's what functions are, what they're good at, and what they're bad at
-# Here's how we do equivalent things with functions.
+# Functions are an essential part of R, and chances are you're already familiar with them
+mean(x = c(1,2,3)) #here's a function!
 
+# We can tell that it's a function because it has parentheses after it
+mean() # won't run, but note the parentheses after mean
 
+# Functions take arguments, which are objects that we supply to the function by placing them inside the parentheses
+# We can pull up the help page for the mean function to determine which arguments that the function will accept
+?mean
+
+# The mean function takes three arguments: x, trim, and na.rm
+# we can either supply those arguments in order:
+mean(c(1,2,3), 0.2, TRUE)
+
+# Or we can supply them by name, in which case they're allowed to be out of order
+mean(x = c(1,2,3), na.rm = TRUE, trim = 0.2)
+
+# R and its packages will supply thousands of functions that you can use, but you can also build your own!
+
+example_function <- function(x){ #list the arguments of the function inside the parentheses
+  return(x + 1) # Note the return function- this tells the function which value is the output of the function
+} #the code which forms the function goes inside the brackets
+
+example_function(1)
+example_function(3)
+example_function(5)
+
+# We can use functions to run an operation on many inputs at once
+
+example_function(1:5) #this is what we call a vectorized function: vector in, vector out. 
+#They're one of the fastest ways to process data in R
+
+# However, not all functions can be easily vectorized. Maybe you need to use a list as an input, for example.
+# In this case, base R supplies a series of apply functions (mainly lapply, sapply, and mapply)
+lapply(list(1,2,3,4,5), example_function) # lapply returns values as a list
+sapply(list(1,2,3,4,5), example_function) # sapply returns values as a vector if possible
+mapply(x = c(1,2,3), y = c(4,5,6), z = c(7,8,9), #mapply takes multiple arguments
+       FUN = function(x, y, z){x + y +z}) # notice how we provided this function without giving it a name first? 
+#This is called an "anonymous function", and it is a very handy tool for making functions that you only intend to use once
+
+# Functions can frequently be used interchangably with for loops
+# for example, this function and this for loop do the same thing
+
+t <- 1:5
+
+for(i in 1:length(t)){
+  t[i] <- t[i] + 1
+}
+
+t
+
+example_function <- function(x){ 
+  return(x + 1) 
+}
+
+t <- example_function(1:5)
+
+t
 # **************************************************************************************************************************************
 
-# This example is pretty much simulating a data set for a population that you used to be able to do 
-# telemetry on but can't anymore.
 
-# Individual data
 
-set.seed(999) # this ensures that we all get the same results when random nubers are drawn
 
 # *********************** STEP 1: CREATING FAKE BANDING DATA ************************************
+set.seed(999)
+
 id <- 1:200 # individual id, sequenced 1-200
 sex <- c(rep("m", 100), rep("f", 100)) # repeats "m" 100 times and "f" 100 times to represent sex
 age <- sample(x=c("hy", "ahy"), size=200, prob=c(0.3, 0.6), replace=T) # samples "hy" (atch year) and "ahy" (after hatch year) with a 30% chance of hy and a 60% chance of ahy
