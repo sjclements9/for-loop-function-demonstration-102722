@@ -2,20 +2,12 @@
 # Code Club Oct 27 2022
 # SJC & LAB
 
-library(remotes)
-
-# Before going any further, download RTools here:
-# https://cran.r-project.org/bin/windows/Rtools/
-
-install_github("cran/RandomFieldsUtils")
-install_github("cran/RandomFields")
-install_github("ropensci/NLMR")
-
 library(dplyr)
 library(furrr)
-library(NLMR)
+library(landscapeR)
 library(landscapetools)
 library(landscapemetrics)
+library(raster)
 
 # Table of contents:
 # 0: Basics of How to Make a For Loop and a Function
@@ -226,14 +218,17 @@ hist(rowSums(ch[which(bird_data$site=='Middle Earth'),]))
 
 create_forest_maps <- function(x){
   percentage_forest <- x %>% 
-    recode('Maine' = 0.7, #almost all forest in Maine
+    recode('Maine' = 0.8, #almost all forest in Maine
            'Middle Earth' = 0.5, 
-           'Australia' = 0.2, 
-           'Tatooine' = 0.1, #almost no forest on Tatooine
+           'Australia' = 0.15, 
+           'Tatooine' = 0.01, #almost no forest on Tatooine
            "Missouri" = 0.3)
   
-  nlm_randomcluster(ncol = 20, nrow = 20, p = percentage_forest) %>% 
-    return()
+  m <- matrix(0, 150, 150)
+  r <- raster(m)
+  rr <- makePatch(r, size=nrow(m)*ncol(m)*percentage_forest, rast=TRUE)
+  
+  return(rr)
 }
 #we could create these landscapes one at a time
 
@@ -246,7 +241,8 @@ plan(multisession) #run this if you're using a PC
 bird_data$landscapes <- future_map(bird_data$site, create_forest_maps, 
             .options = furrr_options(seed = TRUE)) #tells the machine to generate maps randomly for each instance
 
-#The parallel code ran 5.7 times faster on Liam's PC.
+#The parallel code ran 6.08 times faster on Liam's PC
+plan(sequential) #run this to close parallel processing
 
 #let's take a look at what one of these simulated landscapes looks like. Remember, 1 is forest and 0 is everything else
 show_landscape(bird_data$landscapes[[1]])
