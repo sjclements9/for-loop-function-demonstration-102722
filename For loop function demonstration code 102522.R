@@ -167,7 +167,7 @@ site_data # look at data
 #     2. But for males it's 0.1 less than females
 #     3. If their body condition is less than 107 survival drops by 0.3
 #     4. And survival is 0.2 less in middle earth than the baseline
-# small male birds from middle earth are fucked
+
 
 # So we're going to add a column for expected survival and figure out what it will be for each
 bird_data$ex_surv <- 0.7 # baseline survival column
@@ -283,7 +283,7 @@ capture_history_generator <- function(base_survival, bird_data){
     if(bird_data$site[i]=='Middle Earth'){
       bird_data$ex_surv[i] <- bird_data$ex_surv[i]-0.2
     }
-    if(bird_data$ex_surv[i] < 0){
+    if(bird_data$ex_surv[i] < 0){ # survival can't be less than 0
       bird_data$ex_surv[i] <- 0
     }
   }
