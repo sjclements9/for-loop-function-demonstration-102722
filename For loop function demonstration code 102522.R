@@ -2,7 +2,15 @@
 # Code Club Oct 27 2022
 # SJC & LAB
 
+remotes::install_github("cran/RandomFieldsUtils")
+remotes::install_github("cran/RandomFields")
+remotes::install_github("ropensci/NLMR")
+
 library(dplyr)
+library(furrr)
+library(NLMR)
+library(landscapetools)
+library(landscapemetrics)
 
 # Table of contents:
 # 0: Basics of How to Make a For Loop and a Function
@@ -157,7 +165,54 @@ hist(rowSums(ch[which(bird_data$site=='Missouri'),]))
 hist(rowSums(ch[which(bird_data$site=='Middle Earth'),]))
 
 # ************************* PART 4: SOMETHING YOU NEED A FUNCTION FOR *************************
-# something about landcover
+# In certain circumstances, your code may take a prohibitively long time to run. This is especially true of landscape analyses
+# We can make our code run faster using a unique application of functions called parallel processing
+
+#Let's demonstrate this by analyzing the landscapes in which our birds live. 
+#We'll begin by simulating a landscape raster for each bird. The proportion of forest will depend on the site
+
+create_forest_maps <- function(x){
+  percentage_forest <- x %>% 
+    recode('Maine' = 0.7, #almost all forest in Maine
+           'Middle Earth' = 0.5, 
+           'Australia' = 0.2, 
+           'Tatooine' = 0.1, #almost no forest on Tatooine
+           "Missouri" = 0.3)
+  
+  nlm_randomcluster(ncol = 20, nrow = 20, p = percentage_forest) %>% 
+    return()
+}
+#we could create these landscapes one at a time
+
+system.time(bird_data$landscapes <- lapply(bird_data$site, create_forest_maps))
+
+#alternatively, let's use a parallel processing package (furrr) to do it quickly
+plan(multisession) #run this if you're using a PC
+# plan(multicore) #run this if you're using a Mac
+
+system.time(bird_data$landscapes <- future_map(bird_data$site, create_forest_maps, 
+            .options = furrr_options(seed = TRUE))) #tells the machine to generate maps randomly for each instance
+
+#The parallel code ran 5.7 times faster on Liam's PC.
+
+#let's take a look at what one of these simulated landscapes looks like. Remember, 1 is forest and 0 is everything else
+show_landscape(bird_data$landscapes[[1]])
+
+# Now, to determine how these landscapes might affect our birds. Let's calculate a metric of fragmentation 
+#(aggregation index) for each landscape using functions.
+
+bird_data$aggregation_index <- lapply(bird_data$landscapes, function(x){ #this code executes quickly, so parallel processing isn't necessary
+  lsm_c_ai(x) %>% 
+    filter(class == 1) %>% 
+    pull(value) %>% 
+    return()
+})
+
+# ^ this last step could have been done with a for loop as well. Frequently, for loops vs. functions comes down to personal preference
+# However, functions tend to be more computationally efficient when dealing with large datasets, and are the only way to access parallel processing in R
+
+
+
 
 # ************************* PART 5: PUT TOGETHER SOME KIND OF DATA SET, I GUESS *************************
 # put together simulated capture recapture data sets with a few different parameter situations
