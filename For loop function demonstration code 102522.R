@@ -48,9 +48,9 @@ for (i in 1:length(letters)){ # for each row in mat (1:5)
 mat
 
 # 3. print each letter, number, and color in an array (a three-dimensional matrix)
-for (i in 1:length(letters)){
-  for (j in 1:length(numbers)){
-    for (k in 1:length(colors)){
+for (i in 1:length(letters)){ # for each row i in arr (1:5)
+  for (j in 1:length(numbers)){ # for each row j in arr (1:10)
+    for (k in 1:length(colors)){ # for each slice k in arr (1:3)
       arr[i,j,k] <- paste(letters[i], numbers[j], colors[k]) # fill row i, column j, and slice k with letter i number j and color k
     }
   }
@@ -129,7 +129,7 @@ site <- sample(x=c('Maine', 'Middle Earth', 'Australia', 'Tatooine', "Missouri")
 
 bird_data <- data.frame(id=id, sex=sex, age=age, tarsus=tarsus, bill=bill, site=site) # make data frame
 head(bird_data) # look at data
-
+dim(bird_data)
 
 # ********************* STEP 2: Exploring the data and adding new covariates *************************
 # new column: fake body condition index 
@@ -144,19 +144,19 @@ site_data$site <- unique(bird_data$site) # fill in site names in site column
 # determine the mean condition score, total number of individuals, and number of hatch year birds at each site
 # ** FOR LOOP **
 for (i in 1:length(site_data$site)){ # i = site
-  site_data$mean_condition[i] <- bird_data %>% 
-    filter(site == site_data$site[i]) %>% 
-    pull(condition) %>% 
-    mean()
+  site_data$mean_condition[i] <- bird_data %>% # fill every space [i] in the mean_condition column of site_data with...
+    filter(site == site_data$site[i]) %>% # get all data from site i from bird_data
+    pull(condition) %>% # get all data in condition column
+    mean() # get the mean of all data in condition column in site i
     
-  site_data$count[i] <- bird_data %>% 
-    filter(site == site_data$site[i]) %>%
-    nrow()
+  site_data$count[i] <- bird_data %>% # fill every space [i] in the mean_condition column of site_data with...
+    filter(site == site_data$site[i]) %>% # get all data from site i in bird_data
+    nrow() # get number of rows in site i (which is the total number of birds in the site)
 
-  site_data$hy_count[i] <- bird_data %>% 
+  site_data$hy_count[i] <- bird_data %>% # fill every space [i] in the hy_count column of site_data with...
     filter(site == site_data$site[i],
-           age == "hy") %>%
-    nrow()
+           age == "hy") %>% # get all data from site i with age hy
+    nrow() # get number of rows in site i with age hy (total number of hatch year birds in the site)
 }
 site_data # look at data
 
@@ -204,7 +204,7 @@ for (i in 1:nrow(bird_data)){
   }
 }
 
-# then if you want can add how many time steps they're expected to live
+# then if you want can add up how many time steps they're expected to live
 hist(rowSums(ch)) #Most birds don't make to week 2
 hist(rowSums(ch[which(bird_data$site=='Missouri'),]))
 hist(rowSums(ch[which(bird_data$site=='Middle Earth'),]))
